@@ -13,3 +13,9 @@
   gap: 64px;
   font-family: var(--font-lexend-mega);
 }
+.buttonDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}

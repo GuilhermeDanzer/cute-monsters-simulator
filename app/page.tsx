@@ -1,11 +1,13 @@
 'use client'
 import styles from './page.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Card } from '@/components/card'
 import { getRandomPokemon } from '@/helpers/pokemonHelper'
 import { Pokemon } from '@/types/pokemon'
 import pokemonsData from '@/data/pokemons.json'
 import { ProgressBar } from '@/components/progressBar'
+import { createUserLocalStorage } from '@/helpers/createUser'
+import { updateUser } from '@/services/userService'
 
 export default function Home() {
   const allPokemons: Pokemon[] = pokemonsData as Pokemon[]
@@ -54,7 +56,6 @@ export default function Home() {
     setElapsedTime(0)
   }
 
-  // Handle catching progress
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined
     if (isCatching) {
@@ -75,15 +76,23 @@ export default function Home() {
 
   const percentage = Math.min((elapsedTime / totalCatchTime) * 100, 100)
 
-  useEffect(() => {
-    const randomPokemon = getRandomPokemon(allPokemons)
-    setInitialPokemon(randomPokemon)
-    setWildPokemons(
-      allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
-    )
-    setPokemons([randomPokemon])
-  }, [allPokemons])
+  const updateUserData = async () => {
+    const id = localStorage.getItem('id')
+    await updateUser({ id: id || '', pokemons })
+  }
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const randomPokemon = getRandomPokemon(allPokemons)
+      setInitialPokemon(randomPokemon)
+      setWildPokemons(
+        allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+      )
+      const myPokemons = await createUserLocalStorage([randomPokemon])
+      setPokemons(myPokemons)
+    }
+    fetchData()
+  }, [allPokemons])
   useEffect(() => {
     const interval = setInterval(() => {
       setPokemons(prevPokemons =>
@@ -115,7 +124,7 @@ export default function Home() {
   return (
     <div>
       <div className={styles.page}>
-        <div>
+        <div className={styles.buttonDiv}>
           <button
             onClick={() => {
               setIsCatching(true)
@@ -124,6 +133,15 @@ export default function Home() {
             disabled={isCatching} // Disable button while catching
           >
             Catch
+          </button>
+          <button
+            onClick={() => {
+              updateUserData()
+            }}
+            style={{ color: 'black' }}
+            disabled={isCatching} // Disable button while catching
+          >
+            Save
           </button>
         </div>
 
