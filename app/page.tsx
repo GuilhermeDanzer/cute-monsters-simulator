@@ -17,44 +17,8 @@ export default function Home() {
   const [trainingPokemons, setTrainingPokemons] = useState<Pokemon[]>([])
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [isCatching, setIsCatching] = useState<boolean>(false)
-  const [msg, setMsg] = useState('')
-  const totalCatchTime = 5000 // Total time in milliseconds to catch a Pokémon
+  const totalCatchTime = 5000
 
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('pokemons', JSON.stringify(pokemons))
-  }, [pokemons])
-
-  useEffect(() => {
-    localStorage.setItem('wildPokemons', JSON.stringify(wildPokemons))
-  }, [wildPokemons])
-
-  useEffect(() => {
-    localStorage.setItem('trainingPokemons', JSON.stringify(trainingPokemons))
-  }, [trainingPokemons])
-
-  // Load data from localStorage on app initialization
-  useEffect(() => {
-    const savedPokemons = JSON.parse(localStorage.getItem('pokemons') || '[]')
-    const savedTrainingPokemons = JSON.parse(
-      localStorage.getItem('trainingPokemons') || '[]'
-    )
-
-    if (savedPokemons.length > 0) {
-      setPokemons(savedPokemons)
-    } else {
-      const randomPokemon = getRandomPokemon(allPokemons)
-      setInitialPokemon(randomPokemon)
-      setPokemons([randomPokemon])
-      setWildPokemons(
-        allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
-      )
-    }
-
-    setTrainingPokemons(savedTrainingPokemons)
-  }, [allPokemons])
-
-  // Handle Pokémon selection for training
   const handlePokemonSelect = (selectedPokemon: Pokemon) => {
     if (trainingPokemons.some(pokemon => pokemon.id === selectedPokemon.id)) {
       setTrainingPokemons(
@@ -78,14 +42,14 @@ export default function Home() {
   // Catch a Pokémon after progress is complete
   const catchPokemon = () => {
     const randomPokemon = getRandomPokemon(wildPokemons)
+
     if (Math.random() > 0.7) {
       setWildPokemons(
         wildPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
       )
-      setPokemons([...pokemons, randomPokemon])
-    } else {
-      setMsg('The pokemon ran away')
+      setPokemons(pokemons => [...pokemons, randomPokemon])
     }
+
     setIsCatching(false)
     setElapsedTime(0)
   }
@@ -111,7 +75,15 @@ export default function Home() {
 
   const percentage = Math.min((elapsedTime / totalCatchTime) * 100, 100)
 
-  // Handle training Pokémon experience gain
+  useEffect(() => {
+    const randomPokemon = getRandomPokemon(allPokemons)
+    setInitialPokemon(randomPokemon)
+    setWildPokemons(
+      allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+    )
+    setPokemons([randomPokemon])
+  }, [allPokemons])
+
   useEffect(() => {
     const interval = setInterval(() => {
       setPokemons(prevPokemons =>
@@ -145,13 +117,16 @@ export default function Home() {
       <div className={styles.page}>
         <div>
           <button
-            onClick={() => setIsCatching(true)}
+            onClick={() => {
+              setIsCatching(true)
+            }}
             style={{ color: 'black' }}
             disabled={isCatching} // Disable button while catching
           >
             Catch
           </button>
         </div>
+
         {isCatching && <ProgressBar percentage={percentage} />}
         <p style={{ marginBottom: 10, color: '#000' }}>
           Training: {trainingPokemons.length} / {trainingCapacity}

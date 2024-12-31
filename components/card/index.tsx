@@ -52,7 +52,7 @@ export const Card: React.FC<CardProps> = ({
 
       <button
         className={`${styles.button} ${isSelected ? styles.pressed : ''}`}
-        onClick={event => {
+        onClick={() => {
           onSelect()
         }}>
         {isSelected ? 'Training' : 'Train'}{' '}

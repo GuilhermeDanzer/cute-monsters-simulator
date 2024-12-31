@@ -32,6 +32,10 @@ body {
   margin: 0;
 }
 
+p {
+  font-family: var(--font-lexend-mega);
+  color: #000;
+}
 button {
   font-family: var(--font-lexend-mega);
   padding: 0px;
