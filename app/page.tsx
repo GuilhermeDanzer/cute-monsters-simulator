@@ -1,95 +1,186 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+import styles from './page.module.css'
+import { useState, useEffect } from 'react'
+import { Card } from '@/components/card'
+import { getRandomPokemon } from '@/helpers/pokemonHelper'
+import { Pokemon } from '@/types/pokemon'
+import pokemonsData from '@/data/pokemons.json'
+import { ProgressBar } from '@/components/progressBar'
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const allPokemons: Pokemon[] = pokemonsData as Pokemon[]
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const [initialPokemon, setInitialPokemon] = useState<Pokemon | null>(null)
+  const [wildPokemons, setWildPokemons] = useState<Pokemon[]>([])
+  const [pokemons, setPokemons] = useState<Pokemon[]>([])
+  const [trainingCapacity] = useState<number>(3)
+  const [trainingPokemons, setTrainingPokemons] = useState<Pokemon[]>([])
+  const [elapsedTime, setElapsedTime] = useState<number>(0)
+  const [isCatching, setIsCatching] = useState<boolean>(false)
+  const [msg, setMsg] = useState('')
+  const totalCatchTime = 5000 // Total time in milliseconds to catch a Pokémon
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('pokemons', JSON.stringify(pokemons))
+  }, [pokemons])
+
+  useEffect(() => {
+    localStorage.setItem('wildPokemons', JSON.stringify(wildPokemons))
+  }, [wildPokemons])
+
+  useEffect(() => {
+    localStorage.setItem('trainingPokemons', JSON.stringify(trainingPokemons))
+  }, [trainingPokemons])
+
+  // Load data from localStorage on app initialization
+  useEffect(() => {
+    const savedPokemons = JSON.parse(localStorage.getItem('pokemons') || '[]')
+    const savedTrainingPokemons = JSON.parse(
+      localStorage.getItem('trainingPokemons') || '[]'
+    )
+
+    if (savedPokemons.length > 0) {
+      setPokemons(savedPokemons)
+    } else {
+      const randomPokemon = getRandomPokemon(allPokemons)
+      setInitialPokemon(randomPokemon)
+      setPokemons([randomPokemon])
+      setWildPokemons(
+        allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+      )
+    }
+
+    setTrainingPokemons(savedTrainingPokemons)
+  }, [allPokemons])
+
+  // Handle Pokémon selection for training
+  const handlePokemonSelect = (selectedPokemon: Pokemon) => {
+    if (trainingPokemons.some(pokemon => pokemon.id === selectedPokemon.id)) {
+      setTrainingPokemons(
+        trainingPokemons.filter(pokemon => pokemon.id !== selectedPokemon.id)
+      )
+    } else {
+      if (trainingPokemons.length >= trainingCapacity) {
+        const [, ...rest] = trainingPokemons
+        setTrainingPokemons([...rest, selectedPokemon])
+      } else {
+        setTrainingPokemons([...trainingPokemons, selectedPokemon])
+      }
+    }
+  }
+
+  // Get experience needed for the next level
+  const getNextLevelExp = (level: number) => {
+    return level * 5
+  }
+
+  // Catch a Pokémon after progress is complete
+  const catchPokemon = () => {
+    const randomPokemon = getRandomPokemon(wildPokemons)
+    if (Math.random() > 0.7) {
+      setWildPokemons(
+        wildPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+      )
+      setPokemons([...pokemons, randomPokemon])
+    } else {
+      setMsg('The pokemon ran away')
+    }
+    setIsCatching(false)
+    setElapsedTime(0)
+  }
+
+  // Handle catching progress
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined
+    if (isCatching) {
+      interval = setInterval(() => {
+        setElapsedTime(prevTime => {
+          if (prevTime >= totalCatchTime) {
+            clearInterval(interval)
+            catchPokemon()
+            return 0
+          }
+          return prevTime + 100
+        })
+      }, 100)
+    }
+
+    return () => clearInterval(interval)
+  }, [isCatching])
+
+  const percentage = Math.min((elapsedTime / totalCatchTime) * 100, 100)
+
+  // Handle training Pokémon experience gain
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPokemons(prevPokemons =>
+        prevPokemons.map(pokemon => {
+          if (trainingPokemons.some(tp => tp.id === pokemon.id)) {
+            const newExp = pokemon.experience + 1
+            const nextLevelExp = getNextLevelExp(pokemon.level)
+            if (newExp >= nextLevelExp) {
+              return {
+                ...pokemon,
+                experience: newExp - nextLevelExp,
+                level: pokemon.level + 1,
+              }
+            }
+            return { ...pokemon, experience: newExp }
+          }
+          return pokemon
+        })
+      )
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [trainingPokemons])
+
+  if (!initialPokemon) {
+    return <div>Loading...</div>
+  }
+
+  return (
+    <div>
+      <div className={styles.page}>
+        <div>
+          <button
+            onClick={() => setIsCatching(true)}
+            style={{ color: 'black' }}
+            disabled={isCatching} // Disable button while catching
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+            Catch
+          </button>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        {isCatching && <ProgressBar percentage={percentage} />}
+        <p style={{ marginBottom: 10, color: '#000' }}>
+          Training: {trainingPokemons.length} / {trainingCapacity}
+        </p>
+
+        <div
+          style={{
+            flexDirection: 'row',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+          }}>
+          {pokemons.map(pokemon => (
+            <Card
+              image={pokemon.image}
+              key={pokemon.id}
+              name={pokemon.name}
+              type={pokemon.type}
+              totalLife={pokemon.totalLife}
+              currentLife={pokemon.currentLife}
+              level={pokemon.level}
+              experience={pokemon.experience}
+              nextLevelExp={getNextLevelExp(pokemon.level)}
+              onSelect={() => handlePokemonSelect(pokemon)}
+              isSelected={trainingPokemons.some(tp => tp.id === pokemon.id)}
+            />
+          ))}
+        </div>
+      </div>
     </div>
-  );
+  )
 }
