@@ -1,6 +1,6 @@
 'use client'
 import styles from './page.module.css'
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/card'
 import { getRandomPokemon } from '@/helpers/pokemonHelper'
 import { Pokemon } from '@/types/pokemon'
