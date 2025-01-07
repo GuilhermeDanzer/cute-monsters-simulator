@@ -13,7 +13,6 @@ import { Loader } from '@/components/loader'
 export default function Home() {
   const allPokemons: Pokemon[] = pokemonsData as Pokemon[]
 
-  const [initialPokemon, setInitialPokemon] = useState<Pokemon | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [wildPokemons, setWildPokemons] = useState<Pokemon[]>([])
   const [pokemons, setPokemons] = useState<Pokemon[]>([])
@@ -80,9 +79,8 @@ export default function Home() {
 
   useEffect(() => {
     const randomPokemon = getRandomPokemon(allPokemons)
-    setInitialPokemon(randomPokemon)
     setWildPokemons(
-      allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+      wildPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
     )
     setPokemons([randomPokemon])
   }, [allPokemons])
