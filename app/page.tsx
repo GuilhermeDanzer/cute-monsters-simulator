@@ -76,24 +76,21 @@ export default function Home() {
   }, [isCatching])
 
   const percentage = Math.min((elapsedTime / totalCatchTime) * 100, 100)
+  const createOrFetchUserData = async (pokemons: Pokemon[]) => {
+    setLoading(true)
+    console.log(pokemons, 'fetchData')
+    const myPokemons = await createUserLocalStorage(pokemons)
+    setPokemons(pokemons => myPokemons)
+    setLoading(false)
+  }
 
   useEffect(() => {
     const randomPokemon = getRandomPokemon(allPokemons)
     setWildPokemons(
       wildPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
     )
-    setPokemons([randomPokemon])
+    createOrFetchUserData([randomPokemon])
   }, [allPokemons])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      const myPokemons = await createUserLocalStorage(pokemons)
-      setPokemons(myPokemons)
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
 
   const updateUserData = async () => {
     const id = localStorage.getItem('id')

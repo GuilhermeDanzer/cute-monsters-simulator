@@ -6,6 +6,7 @@ export const createUserLocalStorage = async (pokemons: Pokemon[]) => {
   if (!id) {
     id = uuidv4()
     localStorage.setItem('id', id)
+    if (pokemons.length === 0) return []
     await createUser({ id: id, pokemons })
     console.log(pokemons)
     return pokemons
