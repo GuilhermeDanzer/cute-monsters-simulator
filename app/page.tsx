@@ -80,7 +80,7 @@ export default function Home() {
     setLoading(true)
     console.log(pokemons, 'fetchData')
     const myPokemons = await createUserLocalStorage(pokemons)
-    setPokemons(pokemons => myPokemons)
+    setPokemons(_pokemons => myPokemons)
     setLoading(false)
   }
 
