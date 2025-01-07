@@ -5,29 +5,22 @@ interface User {
   id: string
   pokemons: Pokemon[]
 }
+const baseUrl = 'https://cute-monsters-backend.onrender.com/api/users'
 
 export async function createUser({ id, pokemons }: User) {
-  await axios.post(
-    'https://d885-2804-1354-81e8-d200-7d95-4ed2-ddc2-5ce2.ngrok-free.app/api/users',
-    {
-      id: id,
-      pokemons,
-    }
-  )
+  await axios.post(`${baseUrl}`, {
+    id: id,
+    pokemons,
+  })
 }
 
 export async function getUser(id: string): Promise<User> {
-  const response = await axios.get(
-    `https://d885-2804-1354-81e8-d200-7d95-4ed2-ddc2-5ce2.ngrok-free.app/api/users/${id}`
-  )
+  const response = await axios.get(`${baseUrl}/${id}`)
   return response.data as User
 }
 
 export async function updateUser({ id, pokemons }: User) {
-  await axios.patch(
-    `https://d885-2804-1354-81e8-d200-7d95-4ed2-ddc2-5ce2.ngrok-free.app/api/users/${id}`,
-    {
-      pokemons,
-    }
-  )
+  await axios.patch(`${baseUrl}/${id}`, {
+    pokemons,
+  })
 }

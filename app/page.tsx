@@ -1,6 +1,6 @@
 'use client'
 import styles from './page.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { Card } from '@/components/card'
 import { getRandomPokemon } from '@/helpers/pokemonHelper'
 import { Pokemon } from '@/types/pokemon'
@@ -8,11 +8,13 @@ import pokemonsData from '@/data/pokemons.json'
 import { ProgressBar } from '@/components/progressBar'
 import { createUserLocalStorage } from '@/helpers/createUser'
 import { updateUser } from '@/services/userService'
+import { Loader } from '@/components/loader'
 
 export default function Home() {
   const allPokemons: Pokemon[] = pokemonsData as Pokemon[]
 
   const [initialPokemon, setInitialPokemon] = useState<Pokemon | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
   const [wildPokemons, setWildPokemons] = useState<Pokemon[]>([])
   const [pokemons, setPokemons] = useState<Pokemon[]>([])
   const [trainingCapacity] = useState<number>(3)
@@ -76,23 +78,30 @@ export default function Home() {
 
   const percentage = Math.min((elapsedTime / totalCatchTime) * 100, 100)
 
+  useEffect(() => {
+    const randomPokemon = getRandomPokemon(allPokemons)
+    setInitialPokemon(randomPokemon)
+    setWildPokemons(
+      allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
+    )
+    setPokemons([randomPokemon])
+  }, [allPokemons])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      const myPokemons = await createUserLocalStorage(pokemons)
+      setPokemons(myPokemons)
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
+
   const updateUserData = async () => {
     const id = localStorage.getItem('id')
     await updateUser({ id: id || '', pokemons })
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const randomPokemon = getRandomPokemon(allPokemons)
-      setInitialPokemon(randomPokemon)
-      setWildPokemons(
-        allPokemons.filter(pokemon => pokemon.id !== randomPokemon.id)
-      )
-      const myPokemons = await createUserLocalStorage([randomPokemon])
-      setPokemons(myPokemons)
-    }
-    fetchData()
-  }, [allPokemons])
   useEffect(() => {
     const interval = setInterval(() => {
       setPokemons(prevPokemons =>
@@ -116,10 +125,6 @@ export default function Home() {
 
     return () => clearInterval(interval)
   }, [trainingPokemons])
-
-  if (!initialPokemon) {
-    return <div>Loading...</div>
-  }
 
   return (
     <div>
@@ -150,29 +155,33 @@ export default function Home() {
           Training: {trainingPokemons.length} / {trainingCapacity}
         </p>
 
-        <div
-          style={{
-            flexDirection: 'row',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 10,
-          }}>
-          {pokemons.map(pokemon => (
-            <Card
-              image={pokemon.image}
-              key={pokemon.id}
-              name={pokemon.name}
-              type={pokemon.type}
-              totalLife={pokemon.totalLife}
-              currentLife={pokemon.currentLife}
-              level={pokemon.level}
-              experience={pokemon.experience}
-              nextLevelExp={getNextLevelExp(pokemon.level)}
-              onSelect={() => handlePokemonSelect(pokemon)}
-              isSelected={trainingPokemons.some(tp => tp.id === pokemon.id)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <Loader />
+        ) : (
+          <div
+            style={{
+              flexDirection: 'row',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 10,
+            }}>
+            {pokemons.map(pokemon => (
+              <Card
+                image={pokemon.image}
+                key={pokemon.id}
+                name={pokemon.name}
+                type={pokemon.type}
+                totalLife={pokemon.totalLife}
+                currentLife={pokemon.currentLife}
+                level={pokemon.level}
+                experience={pokemon.experience}
+                nextLevelExp={getNextLevelExp(pokemon.level)}
+                onSelect={() => handlePokemonSelect(pokemon)}
+                isSelected={trainingPokemons.some(tp => tp.id === pokemon.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
